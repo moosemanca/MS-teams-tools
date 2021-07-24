@@ -12,11 +12,16 @@ REMOVE-Variable -Name "currentTeams"
 New-Variable -Name "currentTeams" -Scope Script  -Value $null
 #endregion
 
+
+#Startup functions are used at the beginning to setup current session.
 #region StartupFunctions
+
 #functions for setting up the powershell module.
 Function Startup-Stuff {
     Clear-Host
 }
+
+#function for installing necessary POwershell modules.
 Function Setup-TeamsPowerShell {
     #install Powershell get
     if (-not (Get-Module -Name "PowerShellGet")) {
@@ -56,6 +61,7 @@ Function Initiate-Teams {
 
 }
 
+#Primary function for menu controlling
 Function Show-Menu
 {
        #clear-host
@@ -72,14 +78,15 @@ Function Show-Menu
 
             write-host "What would you like to do now?" -ForegroundColor Green
             write-host "1: Import CSV to teams"
-            write-host "2: Copy Members between Teams"
-            write-host "3: Copy Members between Channels"
+            write-host "2: Import CSV to Channel"
+            write-host "3: Copy Members between Teams"
+            write-host "4: Copy Members between Channels"
             Write-host "[q]  Quit " -ForegroundColor Yellow
-            write-host "Select 1-3 or q: " -nonewline -ForegroundColor Green
+            write-host "Select 1-4 or q: " -nonewline -ForegroundColor Green
             $answer = Read-Host  
     
             #if you have selected a valid 0 through number of available options you are good
-            if($answer -In 1..3)
+            if($answer -In 1..4)
             {
                 switch($answer)
                 {
@@ -93,14 +100,28 @@ Function Show-Menu
                         }
                         else
                         {
-                               Write-Host "You WILL be asked before every student" -foregroundcolor DarkCyan
-                               Add-UsersToTeams -withConfirm $asked
+                            Write-Host "You WILL be asked before every student" -foregroundcolor DarkCyan
+                            Add-UsersToTeams -withConfirm $asked
                         }
                     }
                     2{
-                        Execute-TeamCopy                        
+                        write-host "Do you wish to confirm every addition? Y or N:" -ForegroundColor Green -NoNewline
+                        $asked =  Read-Host  | check-YN
+                        if($asked -eq $false)
+                        {
+                            WRite-Host "You will NOT be asked before every student"
+                            Add-UsersToTeamsChannel -withConfirm $asked
+                        }
+                        else
+                        {
+                            Write-Host "You WILL be asked before every student" -foregroundcolor DarkCyan
+                            Add-UsersToTeamsChannel -withConfirm $asked
+                        }                  
                     }
                     3{
+                        Execute-TeamCopy      
+                    }
+                    4{
                         Execute-ChannelCopy
                     }
                 }
@@ -119,6 +140,10 @@ Function Show-Menu
 
 #endregion
 
+
+
+
+#utility functions are resuable, multipurpose functions.
 #region UtilityFunctions
 #function for converting Y or N or Yes and NO to boolean
 Function check-YN {
@@ -206,8 +231,15 @@ Param (
 #endregion
 
 
+
+
+# ACtion Functions are for doing the things
 #region ActionFunctions
 
+
+################################################################
+#Code for importing CSV to a Team                              #
+################################################################
 #taking a teams GroupID then prompting to be fed CSV file paths
 Function ImportCSV-ToTeams {
     Param (
@@ -244,7 +276,7 @@ Function ImportCSV-ToTeams {
                         }
                         else
                         {
-                            write-host "Skipping user $($_.Email) + "$DOMAINNAME")"
+                            write-host "Skipping user $($_.Email)"
                         }
                     }
                     else
@@ -255,7 +287,7 @@ Function ImportCSV-ToTeams {
                     }
                 }
                 else
-                {                    write-host "skipping empty email address" }
+                { write-host "skipping empty email address" }
                 
             }
         }
@@ -286,6 +318,11 @@ Function Add-UsersToTeams {
 
 }
 
+
+
+################################################################
+#Code for Copying memebers between teams CHANNELS              #
+################################################################
 Function Copy-TeamsChannelMembers {
 [CmdletBinding()]
     Param (
@@ -312,7 +349,7 @@ Function Copy-TeamsChannelMembers {
         $answer =  Read-Host  | check-YN
         if($answer)
         {
-            #$users | Add-TeamChannelUser -GroupId "$ToTeamId" -DisplayName "$ToChannelName"
+            $users | Add-TeamChannelUser -GroupId "$ToTeamId" -DisplayName "$ToChannelName"
             Write-host "Channel copy Complete!" -ForegroundColor Cyan
             Write-Host ""
             Write-Host ""
@@ -356,7 +393,9 @@ Function Execute-ChannelCopy {
 
 
 
-
+################################################################
+#Code for copy memebers between TEAMS                          #
+################################################################
 Function Copy-TeamMembers {
 [CmdletBinding()]
     Param (
@@ -410,6 +449,107 @@ Function Execute-TeamCopy {
         $selectedDestTeam = $currentTeams | Where-Object { $_.DisplayName -eq $destTeamAnswer.TeamName}
         
         Copy-TeamMembers -FromTeamId $selectedSourceTeam.GroupId -ToTeamId $selectedDestTeam.GroupId 
+}
+
+
+
+################################################################
+#Code for importing CSV to a Teams Channel                     #
+################################################################
+Function ImportCSV-ToTeamsChannel {
+    Param (
+        [parameter()]
+        [String]
+        $TeamGroupId,
+        [parameter()]
+        [String]
+        $ChannelDisplayName,
+        [parameter()]
+        [bool]
+        $withConfirm=$false
+    )
+    BEGIN{}
+    PROCESS{
+            $FileBrowser = New-Object System.Windows.Forms.OpenFileDialog -Property @{
+            InitialDirectory = [Environment]::GetFolderPath('Desktop')
+            Filter = 'CSV (*.CSV)|*.CSV'
+            MultiSelect = $true
+            }
+
+        $null = $FileBrowser.ShowDialog()
+        foreach($curpath in $FileBrowser.FileNames)
+        {
+            $students = Import-Csv -Path "$curpath"
+            $students | foreach-object -Process { 
+                if(-not $($_.Email) -eq "")
+                {
+                    if($withConfirm)
+                    {
+                        write-host "Add $($_.Email) to selected team channel $ChannelDisplayName ? Y or N:" -ForegroundColor Green -NoNewline
+                        $confirm =  Read-Host  | check-YN
+                        if($confirm)
+                        {
+                            Add-TeamChannelUser -GroupId "$ToTeamId" -DisplayName "$ToChannelName"  -User "$($_.Email)" 
+                            Write-host "User $($_.Email) added to team channel $ChannelDisplayName " -ForegroundColor Green
+                        }
+                        else
+                        {
+                            write-host "Skipping user $($_.Email)"
+                        }
+                    }
+                    else
+                    {
+                        Write-host "Adding user $($_.Email) to team channel $TeamChannelDisplayName" -ForegroundColor Cyan
+                        Add-TeamChannelUser -GroupId "$ToTeamId" -DisplayName "$ToChannelName"  -User "$($_.Email)" 
+                        Write-host "Successfully added user $($_.Email) to team channel $ChannelDisplayName " -ForegroundColor Green
+                    }
+                }
+                else
+                { write-host "skipping empty email address" }
+                
+            }
+        }
+
+    }
+    END {}
+}
+
+Function Add-UsersToTeamsChannel {
+    Param (
+        [parameter()]
+        [bool]
+        $withConfirm=$false
+    )
+
+    if($("Do you wish to use an existing team?" | ask-YesNo | check-YN))
+    {
+        $answer = $currentTeams | Ask-Options 
+        $selectedTeam = $currentTeams | Where-Object { $_.DisplayName -eq $answer.TeamName}
+    }
+    else
+    {
+        $teamName = [Microsoft.VisualBasic.Interaction]::InputBox('Team Name', 'Enter New Team Name:')
+        $teamDescription = [Microsoft.VisualBasic.Interaction]::InputBox('Team Description', 'Enter New Team Description (be careful. This might be hard to change later):')
+        $selectedTeam = New-Team -MailNickName "$($teamName.Replace("" "", """").Replace(""/"", """"))" -DisplayName "$teamName" -Visibility "$TEAMVISIBILITY" -Description "$teamDescription"
+    }
+
+    if($("Do you wish to use an existing team Channel?" | ask-YesNo | check-YN))
+    {
+        $teamChannels = Get-TeamChannel -GroupId $selectedTeam.GroupId
+        $teamChannleAnswer = $teamChannels | Ask-Options -instructions "Select a destination Channel"
+        $selectedChannel = $teamChannels | Where-Object { $_.DisplayName -eq $teamChannleAnswer.TeamName}
+    }
+    else
+    {
+        $ChannelName = [Microsoft.VisualBasic.Interaction]::InputBox('Channel Name', 'Enter New Channel Name:')
+        $ChannelDescription = [Microsoft.VisualBasic.Interaction]::InputBox('Channel Description', 'Enter New Channel Description (be careful. This might be hard to change later):')
+        $selectedChannel = New-TeamChannel -GroupId $selectedTeam.GroupId -DisplayName "$ChannelName" -MembershipType "$TEAMVISIBILITY" -Description "$ChannelDescription"
+    }
+
+
+
+    ImportCSV-ToTeamsChannel -TeamGroupId $selectedTeam.GroupId -withConfirm $withConfirm -ChannelDisplayName $selectedChannel.DisplayName
+
 }
 
 
