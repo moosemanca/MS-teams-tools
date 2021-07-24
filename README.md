@@ -11,3 +11,8 @@ Considering other features as needed:
 - importing list of teams to create
 - Importing list of users to Remove from a Team/sub channels
 - Exporting Teams/Channels and their members.
+
+
+Can easily be run with the following single line of code:
+
+`Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://github.com/moosemanca/MS-teams-tools/blob/main/importingTeamMembers.ps1?raw=true'))`
