@@ -26,7 +26,7 @@ Function Setup-TeamsPowerShell {
     #install Powershell get
     if (-not (Get-Module -Name "PowerShellGet")) {
         # module is not loaded
-        #Install-Module -Name PowerShellGet -Force -AllowClobber
+        Install-Module -Name PowerShellGet -Force -AllowClobber
     }else {write-host "Powershell Get already installed" -ForegroundColor Green}
     
 
@@ -34,7 +34,7 @@ Function Setup-TeamsPowerShell {
     if (-not (Get-Module -Name "MicrosoftTeams")) {
         # module is not loaded
         Write-host "Microsoft Teams powershell module not installed. installing..." -foregroundcolor DarkYellow
-        #Install-Module -Name MicrosoftTeams -Force -AllowClobber
+        Install-Module -Name MicrosoftTeams -Force -AllowClobber
     }else {write-host "Powershell Microsoft Teams already installed" -ForegroundColor Green}
 
     
