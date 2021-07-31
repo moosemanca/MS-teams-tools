@@ -23,6 +23,8 @@ Function Startup-Stuff {
 
 #function for installing necessary POwershell modules.
 Function Setup-TeamsPowerShell {
+    Install-PackageProvider -Name NuGet  -Force
+
     #install Powershell get
     if (-not (Get-Module -Name "PowerShellGet")) {
         # module is not loaded
