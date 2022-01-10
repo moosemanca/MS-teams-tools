@@ -320,6 +320,21 @@ Function Add-UsersToTeams {
 
 }
 
+Function Add-GuestToTeams {
+    Param(
+    [parameter()]
+    [String]
+    $email,
+    [parameter()]
+    [String]
+    $tenant
+    )
+    BEGIN {}
+    PROCESS{
+        $guestUser = Get-AzureADUser -ObjectId "$($email -replace "@", "_")#EXT#@$tenant.onmicrosoft.com"
+    }
+    END {}
+}
 
 
 ################################################################
@@ -491,7 +506,7 @@ Function ImportCSV-ToTeamsChannel {
                         $confirm =  Read-Host  | check-YN
                         if($confirm)
                         {
-                            Add-TeamChannelUser -GroupId "$ToTeamId" -DisplayName "$ToChannelName"  -User "$($_.Email)" 
+                            Add-TeamChannelUser -GroupId "$TeamGroupId" -DisplayName "$ChannelDisplayName"  -User "$($_.Email)" 
                             Write-host "User $($_.Email) added to team channel $ChannelDisplayName " -ForegroundColor Green
                         }
                         else
@@ -502,7 +517,7 @@ Function ImportCSV-ToTeamsChannel {
                     else
                     {
                         Write-host "Adding user $($_.Email) to team channel $TeamChannelDisplayName" -ForegroundColor Cyan
-                        Add-TeamChannelUser -GroupId "$ToTeamId" -DisplayName "$ToChannelName"  -User "$($_.Email)" 
+                        Add-TeamChannelUser -GroupId "$TeamGroupId" -DisplayName "$ChannelDisplayName"  -User "$($_.Email)" 
                         Write-host "Successfully added user $($_.Email) to team channel $ChannelDisplayName " -ForegroundColor Green
                     }
                 }
@@ -571,3 +586,78 @@ Show-Menu
 Disconnect-MicrosoftTeams
 
 
+
+
+
+<#
+
+Connect-MsolService
+
+$azureSession = Connect-AzureAd
+
+$azureSession | Get-Member
+$teamsSesssion = Connect-MicrosoftTeams
+
+get-team -user '100269208@durhamcollege.ca'
+
+New-AzureADMSInvitation
+
+Disconnect-AzureAD
+Disconnect-MicrosoftTeams
+
+$email = "tom@turnertechnology.ca"
+
+Get-AzureADUser -ObjectId "$($email -replace "@", "_")#EXT#@dconline.onmicrosoft.com"
+
+Get-AzureADUser -Filter "UserType eq 'Guest'"
+
+
+
+Function Add-GuestToTeams {
+    Param(
+    [parameter()]
+    [String]
+    $email,
+    [parameter()]
+    [String]
+    $tenant
+    )
+    BEGIN {}
+    PROCESS{
+        try
+        {
+           $guestUser = Get-AzureADUser -ObjectId "$($email -replace "@", "_")#EXT#@$tenant" -ErrorAction Ignore
+           write-host "user $email was found"
+        }
+        catch{
+           $guestUser = $null
+           write-host "user $email was NOT found"
+        }
+    }
+    END {}
+}
+
+Function ProcessListOfGuests {
+    Param(
+    [parameter(ValueFromPipeline,Position=0)]
+    [object[]]
+    $guest
+    )
+    BEGIN {
+        Connect-AzureAD
+        $tenant = Get-AzureADTenantDetail
+        $tenantUrl = ($tenant.VerifiedDomains | where-object {$_._Default -eq $true}).Name
+    }
+    PROCESS{
+        Add-GuestToTeams -email $guest.email -tenant $tenantUrl
+    }
+    END{}
+}
+
+
+$students = Import-Csv -Path "C:\Users\tturner\OneDrive - Turner Technology\Documents\turnerthomas\misc\testimport.csv"
+
+$students | ProcessListOfGuests
+
+
+#>
