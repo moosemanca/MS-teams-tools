@@ -83,12 +83,13 @@ Function Show-Menu
             write-host "2: Import CSV to Channel"
             write-host "3: Copy Members between Teams"
             write-host "4: Copy Members between Channels"
+            Write-host "5: Export Team Members to CSV"
             Write-host "[q]  Quit " -ForegroundColor Yellow
-            write-host "Select 1-4 or q: " -nonewline -ForegroundColor Green
+            write-host "Select 1-5 or q: " -nonewline -ForegroundColor Green
             $answer = Read-Host  
     
             #if you have selected a valid 0 through number of available options you are good
-            if($answer -In 1..4)
+            if($answer -In 1..5)
             {
                 switch($answer)
                 {
@@ -125,6 +126,9 @@ Function Show-Menu
                     }
                     4{
                         Execute-ChannelCopy
+                    }
+                    5{
+                        Export-TeamMembers
                     }
                 }
         
@@ -468,6 +472,23 @@ Function Execute-TeamCopy {
         Copy-TeamMembers -FromTeamId $selectedSourceTeam.GroupId -ToTeamId $selectedDestTeam.GroupId 
 }
 
+
+Function Export-TeamMembers{
+        $sourceteamanswer = $currentTeams | Ask-Options -instructions "Select a Source Team"
+        $selectedSourceTeam = $currentTeams | Where-Object { $_.DisplayName -eq $sourceteamanswer.TeamName}
+       
+        $users = Get-TeamUser -GroupId $selectedSourceTeam.GroupId
+
+         $FileBrowser = New-Object System.Windows.Forms.SaveFileDialog -Property @{
+            InitialDirectory = [Environment]::GetFolderPath('Desktop')
+            Filter = 'CSV (*.CSV)|*.CSV'
+            }
+
+        $null = $FileBrowser.ShowDialog()
+
+        $users | ConvertTo-csv | out-file -FilePath $FileBrowser.FileNames[0]
+
+}
 
 
 ################################################################
