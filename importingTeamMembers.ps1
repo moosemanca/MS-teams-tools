@@ -1,4 +1,7 @@
-﻿#region Dependencies
+﻿#Tom Turner in WEbD Class
+
+
+#region Dependencies
 [void][Reflection.Assembly]::LoadWithPartialName('Microsoft.VisualBasic')
 [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
 
