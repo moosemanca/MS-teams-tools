@@ -87,12 +87,13 @@ Function Show-Menu
             write-host "3: Copy Members between Teams"
             write-host "4: Copy Members between Channels"
             Write-host "5: Export Team Members to CSV"
+            Write-host "6: Remove All Team Members"
             Write-host "[q]  Quit " -ForegroundColor Yellow
-            write-host "Select 1-5 or q: " -nonewline -ForegroundColor Green
+            write-host "Select 1-6 or q: " -nonewline -ForegroundColor Green
             $answer = Read-Host  
     
             #if you have selected a valid 0 through number of available options you are good
-            if($answer -In 1..5)
+            if($answer -In 1..6)
             {
                 switch($answer)
                 {
@@ -132,6 +133,9 @@ Function Show-Menu
                     }
                     5{
                         Export-TeamMembers
+                    }
+                    6{
+                        #remove all team members
                     }
                 }
         
@@ -555,6 +559,55 @@ Function ImportCSV-ToTeamsChannel {
     END {}
 }
 
+Remove-AllTeamMembers {
+    Param (
+        [parameter()]
+        [String]
+        $TeamGroupId,
+        [parameter()]
+        [bool]
+        $withConfirm=$false
+    )
+    BEGIN{}
+    PROCESS{
+        $users = Get-TeamUser -GroupId "$TeamGroupId" | Where-Object { $_. -eq $answer.TeamName}
+        Write-Host "Please Confirm that you want to Remove $($users.count) From TEAM"
+        $users | format-table 
+        
+        write-host "Do you wish to execute this? Y or N:" -ForegroundColor Green -NoNewline
+        $answer =  Read-Host  | check-YN
+        if($answer)
+        {
+            Write-host "Copying users..."
+            $users | Remove-TeamUser -GroupId "$ToTeamId" 
+            Write-host "Team copy complete!" -ForegrounndColor Cyan
+            write-host ""
+            write-host ""
+            write-host ""
+            write-host ""
+        }
+        else
+        {
+            Write-host "Operation Aborted!" -ForegroundColor Cyan
+            write-host ""
+            write-host ""
+            write-host ""
+            write-host ""
+
+        }
+
+            
+            
+            
+            Add-TeamUser -GroupId $selectedTeam.GroupId -User "$($_.Email)" 
+            
+    
+        $answer = $currentTeams | Ask-Options 
+        $selectedTeam = $currentTeams | Where-Object { $_.DisplayName -eq $answer.TeamName}
+        Remove-TeamUser -GroupId "$TeamGroupId" -User "$($_.Email)" 
+    }
+    END{}
+}
 Function Add-UsersToTeamsChannel {
     Param (
         [parameter()]
