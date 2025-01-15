@@ -26,7 +26,8 @@ Function Startup-Stuff {
 
 #function for installing necessary POwershell modules.
 Function Setup-TeamsPowerShell {
-    Install-PackageProvider -Name NuGet  -Force
+    Register-PackageSource -provider NuGet -name nugetRepository -location https://www.nuget.org/api/v2 -ErrorAction SilentlyContinue
+    Get-PackageProvider | where name -eq 'nuget' | Install-PackageProvider -Force
 
     #install Powershell get
     if (-not (Get-Module -Name "PowerShellGet")) {
@@ -570,7 +571,7 @@ Remove-AllTeamMembers {
     )
     BEGIN{}
     PROCESS{
-        $users = Get-TeamUser -GroupId "$TeamGroupId" | Where-Object { $_. -eq $answer.TeamName}
+   #     $users = Get-TeamUser -GroupId "$TeamGroupId" | Where-Object { $_. -eq $answer.TeamName}
         Write-Host "Please Confirm that you want to Remove $($users.count) From TEAM"
         $users | format-table 
         
