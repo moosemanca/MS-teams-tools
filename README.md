@@ -18,4 +18,3 @@ Can easily be run with the following single line of code (REQUIRES ELEVATED PRIV
 `Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://github.com/moosemanca/MS-teams-tools/blob/main/importingTeamMembers.ps1?raw=true'))`
 
 
-Minor changes here
